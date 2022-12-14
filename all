@@ -1,0 +1,262 @@
+1
+#include<stdio.h> 
+#include<stdlib.h> 
+#include<unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+ 
+void main(int argc,char *arg[]) 
+{ 
+int pid; 
+pid=fork(); 
+if(pid<0) 
+{ 
+printf("fork failed"); 
+exit(1); 
+} 
+else if(pid==0) 
+{ 
+printf("\nNow in Child Process and it's o/p is \n"); 
+execlp("ls","ls",NULL); 
+exit(0); 
+} 
+else 
+{ 
+printf("\nChild Process created successfully\n"); 
+printf("\nIt's Process id is %d\n",getpid()); 
+wait(NULL); 
+printf("\nReturn back to Parent process, now ready to exit\n"); 
+exit(0); 
+} 
+}
+-------------------------------------------------------
+2
+#include <stdio.h> 
+#include <sys/types.h> 
+#include <unistd.h>
+#include <sys/wait.h>
+
+void main() 
+{ 
+int pid; 
+pid=fork(); 
+if(!pid) 
+{ 
+printf("Child process..."); 
+printf("\n\nChild PID : %d",getpid()); 
+printf("\nParent PID : %d",getppid()); 
+printf("\n\nFinished with child\n"); 
+} 
+else 
+{ 
+wait(NULL); 
+printf("\nParent process"); 
+printf("\nPARENT PID : %d",getpid()); 
+printf("\nChild PID : %d",pid); 
+} 
+}
+--------------------------------------------------------
+3
+#include<stdio.h> 
+#include<unistd.h> 
+#include<sys/types.h> 
+#include<fcntl.h> 
+void main() 
+{ 
+char buff; 
+int fd,fd1; 
+fd=open("one.txt",O_RDONLY); 
+fd1=open("two.txt",O_WRONLY|O_CREAT); 
+while(read(fd,&buff,1)) 
+write(fd1,&buff,1); 
+printf("The copy of a file is successed"); 
+close(fd); 
+close(fd1); 
+}
+---------------------------------------------------------
+4
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <pthread.h>
+
+// Let us create a global variable to change it in threads 
+int g = 0; 
+
+// The function to be executed by all threads 
+void *myThreadFun(void * vargp) 
+{ 
+    // Store the value argument passed to this thread 
+    int *myid = (int *)vargp; 
+
+    // Let us create a static variable to observe its changes 
+    static int s = 0; 
+
+    // Change static and global variables 
+    ++s; ++g; 
+
+    // Print the argument, static and global variables 
+    printf("Thread ID: %d, Static: %d, Global: %d\n", *myid, ++s, ++g); 
+} 
+
+int main() 
+{ 
+    int i; 
+    pthread_t tid; 
+
+    // Let us create three threads 
+    for (i = 0; i < 3; i++) 
+        pthread_create(&tid, NULL, myThreadFun, (void *)&tid); 
+
+    pthread_exit(NULL); 
+    return 0; 
+}
+--------------------------------------------------------------
+6
+#include<stdio.h>
+#include<stdlib.h>
+int mutex=1,full=0,empty=3,x=0;  //Initialization of semaphores 
+                                                       // mutex = 1
+                                                       //Full = 0 - Initially, all slots are empty. Thus full slots are 0
+                                                      //Empty = 3 // All slots are empty initially
+void producer();
+void consumer();
+int wait(int);
+int signal(int);
+int main()
+{
+	int n;
+	printf("\n1.Producer\n2.Consumer\n3.Exit");
+	while(1)
+	{
+		printf("\nEnter your choice:");
+		scanf("%d",&n);
+		switch(n)
+		{
+			case 1:	if((mutex==1)&&(empty!=0))
+						producer();
+					else
+						printf("Buffer is full!!");
+					break;
+			case 2:	if((mutex==1)&&(full!=0))
+						consumer();
+					else
+						printf("Buffer is empty!!");
+					break;
+			case 3:
+					exit(0);
+					break;
+		}
+	}
+	
+	return 0;
+}
+
+int wait(int s)
+{
+	return (--s);
+}
+
+int signal(int s)
+{
+	return(++s);
+}
+
+void producer()
+{
+	mutex=wait(mutex);
+	full=signal(full);          //producer has placed the item and thus the value of “full” is 						increased by 1
+	empty=wait(empty);  //producer produces an item then the value of “empty” is 					reduced  by 1 
+                                                   //because one slot will be filled now
+
+	x++;
+	printf("\nProducer produces the item %d",x);
+	mutex=signal(mutex);
+}
+
+void consumer()
+{
+	mutex=wait(mutex);
+	full=wait(full);                      //consumer is removing an item from buffer, therefore the 						value of 
+					//“full” is reduced by 1
+	empty=signal(empty);       //consumer has consumed the item, thus increasing the 						value of 
+                                                              //“empty” by 1
+	printf("\nConsumer consumes item %d",x);
+	x--;
+	mutex=signal(mutex);
+}
+---------------------------------------------------------------------
+8
+#include<stdio.h>
+int main()
+{
+   int i,j,n,a[50],frame[10],no,k,avail,count=0;
+printf("\n ENTER THE NUMBER OF PAGES:\n");
+scanf("%d",&n);
+printf("\n ENTER THE PAGE NUMBER :\n");
+   for(i=1;i<=n;i++)
+scanf("%d",&a[i]);
+printf("\n ENTER THE NUMBER OF FRAMES :");
+scanf("%d",&no);
+   for(i=0;i<no;i++)
+       frame[i]= -1;
+   j=0;
+printf("\tref string\t page frames\n");
+   for(i=1;i<=n;i++)
+      {
+printf("%d\t\t",a[i]);
+          avail=0;
+          for(k=0;k<no;k++)
+               if(frame[k]==a[i])
+                     avail=1;
+               if (avail==0)
+                  {
+                        frame[j]=a[i];
+                        j=(j+1)%no;
+                        count++;
+                        for(k=0;k<no;k++)
+printf("%d\t",frame[k]);
+                  }
+printf("\n");
+      }
+printf("Page Fault Is %d",count);
+    return 0;
+}
+-----------------------------------------------------------------------
+9
+#include<stdio.h>
+#include<string.h>
+int main()
+    {
+        int nf=0,i=0,j=0,ch;
+        char mdname[10],fname[10][10],name[10];
+printf("\nEnter the directory name:");
+scanf("%s",mdname);
+printf("\nEnter the number of files:");
+scanf("%d",&nf);
+        do
+        {
+printf("\nEnter file name to be created:");
+scanf("%s",name);
+            for(i=0;i<nf;i++)
+            {
+                if(!strcmp(name,fname[i]))
+                break;
+            }
+            if(i==nf)
+            {
+strcpy(fname[j++],name);
+nf++;
+            }
+            else
+printf("\nThere is already %s\n",name);
+printf("\nDo you want to enter another file(yes - 1 or no - 0):");
+scanf("%d",&ch);
+        }
+        while(ch==1);
+printf("\n\nDirectory name is:%s\n",mdname);
+printf("\nFiles names are:");
+        for(i=0;i<j;i++)
+printf("\n%s",fname[i]);
+        return 0;
+    }
